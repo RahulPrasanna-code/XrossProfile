@@ -31,6 +31,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -73,6 +74,22 @@ public class EditProfile extends AppCompatActivity {
 
         mdb = FirebaseDatabase.getInstance();
         mreference = mdb.getReference();
+
+        StorageReference ref
+                = storageReference
+                .child(
+                        "images/"
+                                + userid);
+
+        ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                Uri image_uri = uri;
+                String image = uri.toString();
+                Picasso.with(EditProfile.this).load(image).into(imgUpload);
+            }
+        });
+
 
 
         imgUpload.setOnClickListener(new View.OnClickListener() {

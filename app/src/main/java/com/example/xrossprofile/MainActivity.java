@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
                     txtUsername.setText(username);
                     txtTag.setText(tagname);
-                    txtConnections.setText(image);
+                    txtConnections.setText(connections);
 
                     Picasso.with(MainActivity.this).load(image).into(imgProfile);
 
