@@ -3,10 +3,16 @@ package com.example.xrossprofile;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -68,22 +74,25 @@ public class MainActivity extends AppCompatActivity {
         userid = loggedUser.getUid();
 
         mreference.child("users").child(userid).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+            @SuppressLint("ResourceAsColor")
             @Override
             public void onComplete(@NonNull Task<DataSnapshot> task) {
                 if (!task.isSuccessful()) {
                     Toast.makeText(MainActivity.this,"Error"+task.getException(),Toast.LENGTH_LONG).show();
                 }
                 else {
+                    String about = task.getResult().child("About").getValue().toString();
                     String username = task.getResult().child("username").getValue().toString();
                     String tagname = task.getResult().child("tag").getValue().toString();
                     String connections = task.getResult().child("connections").getValue().toString();
                     String image = task.getResult().child("imageurl").getValue().toString();
 
+
                     txtUsername.setText(username);
                     txtTag.setText(tagname);
                     txtConnections.setText(connections);
-
-                    Picasso.with(MainActivity.this).load(image).into(imgProfile);
+                    txtAbout.setText(about);
+                    Picasso.with(MainActivity.this).load(image).resize(160,160).into(imgProfile);
 
                 }
             }

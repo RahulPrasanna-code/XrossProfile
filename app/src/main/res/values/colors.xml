@@ -7,4 +7,18 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="orange">#FB8B00</color>
+    <color name="boxbg">#313131</color>
+    <color name="helper">#7AA6D7</color>
+    <color name="reformer">#6F9D80</color>
+    <color name="leader">#F8AB81</color>
+    <color name="individualist">#A64DA6</color>
+    <color name="loyalist">#F7D967</color>
+    <color name="peacemaker">#4C8DAF</color>
+    <color name="investigator">#943C3C</color>
+    <color name="enthusiast">#DC6CA7</color>
+    <color name="challenger">#E54141</color>
+    <color name="chatbg">#3F3F4E</color>
+    <color name="sayhibtn">#00B0FB</color>
+    <color name="ignore">#3F3F4E</color>
 </resources>

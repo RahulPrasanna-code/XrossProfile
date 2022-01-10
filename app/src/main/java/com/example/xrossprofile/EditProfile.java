@@ -1,20 +1,18 @@
 package com.example.xrossprofile;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -34,16 +32,18 @@ import com.google.firebase.storage.UploadTask;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
-import java.util.UUID;
 
 public class EditProfile extends AppCompatActivity {
 
-    private Button btnPrev;
-    private ImageView imgUpload;
+    private ImageView btnPrev,imgUpload;
+    private EditText txtEditName,txtEditAbout;
+    private Button btnSave,btnTag;
+
+    private String profileImageUrl;
     private Uri filePath;
     private FirebaseAuth auth;
     private FirebaseUser user;
-    private String userid,imageUrl;
+    private String userid,imageUrl,name,about;
     private FirebaseDatabase mdb;
     private DatabaseReference mreference;
     private final int PICK_IMAGE_REQUEST = 22;
@@ -56,21 +56,23 @@ public class EditProfile extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_profile);
 
-        ActionBar actionBar;
-        actionBar = getSupportActionBar();
-        ColorDrawable colorDrawable
-                = new ColorDrawable(
-                Color.parseColor("#0F9D58"));
-        actionBar.setBackgroundDrawable(colorDrawable);
+
 
         imgUpload = findViewById(R.id.imgUpload);
         btnPrev = findViewById(R.id.btnPrev);
+        btnSave = findViewById(R.id.btnSave);
+        txtEditName = findViewById(R.id.txtEditName);
+        txtEditAbout = findViewById(R.id.txtEditAbout);
+        btnTag = findViewById(R.id.btnTag);
+
 
         storage = FirebaseStorage.getInstance();
         storageReference = storage.getReference();
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
         userid = user.getUid();
+        name = txtEditName.getText().toString();
+        about = txtEditAbout.getText().toString();
 
         mdb = FirebaseDatabase.getInstance();
         mreference = mdb.getReference();
@@ -81,16 +83,8 @@ public class EditProfile extends AppCompatActivity {
                         "images/"
                                 + userid);
 
-        ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-            @Override
-            public void onSuccess(Uri uri) {
-                Uri image_uri = uri;
-                String image = uri.toString();
-                Picasso.with(EditProfile.this).load(image).into(imgUpload);
-            }
-        });
 
-
+        setValues();
 
         imgUpload.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -101,12 +95,66 @@ public class EditProfile extends AppCompatActivity {
 
         });
 
+        btnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String modified_name;
+                String modified_about;
+
+
+                modified_name = txtEditName.getText().toString();
+
+                modified_about = txtEditAbout.getText().toString();
+
+                uploadImage(modified_name,modified_about);
+
+
+            }
+        });
+
         btnPrev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(EditProfile.this,MainActivity.class));
             }
         });
+    }
+
+    private void setValues() {
+        mreference.child("users").child(userid).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+            @SuppressLint("ResourceAsColor")
+            @Override
+            public void onComplete(@NonNull Task<DataSnapshot> task) {
+                if (!task.isSuccessful()) {
+                    Toast.makeText(EditProfile.this,"Error"+task.getException(),Toast.LENGTH_LONG).show();
+                }
+                else {
+                    String about = task.getResult().child("About").getValue().toString();
+                    String username = task.getResult().child("username").getValue().toString();
+                    String tagname = task.getResult().child("tag").getValue().toString();
+                    String connections = task.getResult().child("connections").getValue().toString();
+                    String image = task.getResult().child("imageurl").getValue().toString();
+
+
+                    txtEditName.setText(username);
+                    btnTag.setText(tagname);
+                    txtEditAbout.setText(about);
+                    Picasso.with(EditProfile.this).load(image).resize(160,160).into(imgUpload);
+
+                }
+            }
+        });
+    }
+
+    private boolean isDataChanged(String modifiedUrl,String modifiedName,String modifiedAbout) {
+        if(modifiedUrl.equals(imageUrl) && modifiedName.equals(name) && modifiedAbout.equals(about))
+        {
+            return false;
+        }
+        else
+        {
+            return  true;
+        }
     }
 
     private void selectImage() {
@@ -150,8 +198,9 @@ public class EditProfile extends AppCompatActivity {
                         .getBitmap(
                                 getContentResolver(),
                                 filePath);
-                imgUpload.setImageBitmap(bitmap);
-                uploadImage();
+
+                Bitmap resized_image = Bitmap.createScaledBitmap(bitmap,180,180,true);
+                imgUpload.setImageBitmap(resized_image);
             }
 
             catch (IOException e) {
@@ -161,14 +210,14 @@ public class EditProfile extends AppCompatActivity {
         }
     }
 
-    private void uploadImage() {
+    private void uploadImage(String modifiedName,String modifiedAbout) {
 
         if (filePath != null) {
 
             // Code for showing progressDialog while uploading
             ProgressDialog progressDialog
                     = new ProgressDialog(this);
-            progressDialog.setTitle("Uploading...");
+            progressDialog.setTitle("Updating Profile");
             progressDialog.show();
 
             // Defining the child of storageReference
@@ -194,7 +243,7 @@ public class EditProfile extends AppCompatActivity {
                                         public void onSuccess(Uri uri) {
                                             Uri downloadUri = uri;
                                             imageUrl = downloadUri.toString();
-                                            addImage(imageUrl);
+                                            changeData(imageUrl,modifiedName,modifiedAbout);
                                         }
                                     });
                                     // Image uploaded successfully
@@ -203,9 +252,10 @@ public class EditProfile extends AppCompatActivity {
                                     progressDialog.dismiss();
                                     Toast
                                             .makeText(EditProfile.this,
-                                                    "Image Uploaded!!",
+                                                    "Profile Updated !!",
                                                     Toast.LENGTH_SHORT)
                                             .show();
+
                                 }
                             })
 
@@ -235,19 +285,39 @@ public class EditProfile extends AppCompatActivity {
                                             * taskSnapshot.getBytesTransferred()
                                             / taskSnapshot.getTotalByteCount());
                                     progressDialog.setMessage(
-                                            "Uploaded "
+                                            "Updating Profile "
                                                     + (int) progress + "%");
                                 }
                             });
 
         }
+        else{
+            changeData(modifiedName,modifiedAbout);
+        }
 
 
     }
 
-    private void addImage(String imageUrl) {
+    private void changeData(String imageUrl,String modifiedName, String modifiedAbout) {
 
         mreference.child("users").child(userid).child("imageurl").setValue(imageUrl);
+        mreference.child("users").child(userid).child("username").setValue(modifiedName);
+        mreference.child("users").child(userid).child("About").setValue(modifiedAbout);
+
+        startActivity(new Intent(EditProfile.this,MainActivity.class));
+
+
+    }
+
+    public void changeData(String modifiedName, String modifiedAbout)
+    {
+        mreference.child("users").child(userid).child("username").setValue(modifiedName);
+        mreference.child("users").child(userid).child("About").setValue(modifiedAbout);
+
+        Toast.makeText(EditProfile.this,"Profile Updated !!",Toast.LENGTH_LONG).show();
+
+        startActivity(new Intent(EditProfile.this,MainActivity.class));
+
     }
 
 }
