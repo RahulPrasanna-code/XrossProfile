@@ -48,7 +48,7 @@ public class EditProfile extends AppCompatActivity {
 
     private ImageView btnPrev,imgUpload;
     private EditText txtEditName,txtEditAbout;
-    private Button btnSave,btnSaveTag;
+    private Button btnSave,btnSaveTag,btnCancel;
     private TextView btnTag;
     private String tagColor;
 
@@ -118,6 +118,7 @@ public class EditProfile extends AppCompatActivity {
 
                 View tagSelectionView = layoutInflater.inflate(R.layout.activity_select_tag,null);
 
+                btnCancel = tagSelectionView.findViewById(R.id.btnCancel);
                 btnSaveTag = tagSelectionView.findViewById(R.id.btnSaveTag);
 
                 PopupWindow popupWindow = new PopupWindow(tagSelectionView, ConstraintLayout.LayoutParams.WRAP_CONTENT,ConstraintLayout.LayoutParams.WRAP_CONTENT);
@@ -141,6 +142,13 @@ public class EditProfile extends AppCompatActivity {
                         tagColor = colorGetter.getColor(selected_tag);
                         setTagColor();
 
+                        popupWindow.dismiss();
+                    }
+                });
+
+                btnCancel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
                         popupWindow.dismiss();
                     }
                 });

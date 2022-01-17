@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         auth = FirebaseAuth.getInstance();
-        
+
         imgProfile = findViewById(R.id.imgProfile);
         btnEdit = findViewById(R.id.btnEdit);
         txtUsername = findViewById(R.id.txtUsername);
