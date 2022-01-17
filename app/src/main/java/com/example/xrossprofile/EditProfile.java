@@ -2,18 +2,29 @@ package com.example.xrossprofile;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -37,7 +48,9 @@ public class EditProfile extends AppCompatActivity {
 
     private ImageView btnPrev,imgUpload;
     private EditText txtEditName,txtEditAbout;
-    private Button btnSave,btnTag;
+    private Button btnSave,btnSaveTag;
+    private TextView btnTag;
+    private String tagColor;
 
     private String profileImageUrl;
     private Uri filePath;
@@ -49,6 +62,8 @@ public class EditProfile extends AppCompatActivity {
     private final int PICK_IMAGE_REQUEST = 22;
     private FirebaseStorage storage;
     private StorageReference storageReference;
+    private ColorGetter colorGetter;
+
 
 
     @Override
@@ -56,15 +71,14 @@ public class EditProfile extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_profile);
 
-
-
+        ConstraintLayout editprofilelayout = findViewById(R.id.editprofile);
         imgUpload = findViewById(R.id.imgUpload);
         btnPrev = findViewById(R.id.btnPrev);
         btnSave = findViewById(R.id.btnSave);
         txtEditName = findViewById(R.id.txtEditName);
         txtEditAbout = findViewById(R.id.txtEditAbout);
         btnTag = findViewById(R.id.btnTag);
-
+        colorGetter = new ColorGetter();
 
         storage = FirebaseStorage.getInstance();
         storageReference = storage.getReference();
@@ -86,13 +100,51 @@ public class EditProfile extends AppCompatActivity {
 
         setValues();
 
+
+
         imgUpload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 selectImage();
             }
 
+        });
 
+        btnTag.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LayoutInflater layoutInflater = (LayoutInflater) EditProfile.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+                View tagSelectionView = layoutInflater.inflate(R.layout.activity_select_tag,null);
+
+                btnSaveTag = tagSelectionView.findViewById(R.id.btnSaveTag);
+
+                PopupWindow popupWindow = new PopupWindow(tagSelectionView, ConstraintLayout.LayoutParams.WRAP_CONTENT,ConstraintLayout.LayoutParams.WRAP_CONTENT);
+
+                popupWindow.showAtLocation(editprofilelayout, Gravity.CENTER,0,0);
+
+                setCheckedButton(tagSelectionView);
+
+                btnSaveTag.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        RadioGroup radioGroup = tagSelectionView.findViewById(R.id.tagselection);
+                        int clicked_btn_id = radioGroup.getCheckedRadioButtonId();
+
+                        RadioButton clicked_button = tagSelectionView.findViewById(clicked_btn_id);
+
+                        String selected_tag = clicked_button.getText().toString();
+
+                        btnTag.setText(selected_tag);
+
+                        tagColor = colorGetter.getColor(selected_tag);
+                        setTagColor();
+
+                        popupWindow.dismiss();
+                    }
+                });
+            }
         });
 
         btnSave.setOnClickListener(new View.OnClickListener() {
@@ -100,7 +152,6 @@ public class EditProfile extends AppCompatActivity {
             public void onClick(View v) {
                 String modified_name;
                 String modified_about;
-
 
                 modified_name = txtEditName.getText().toString();
 
@@ -118,6 +169,38 @@ public class EditProfile extends AppCompatActivity {
                 startActivity(new Intent(EditProfile.this,MainActivity.class));
             }
         });
+    }
+
+    public void setTagColor() {
+        btnTag.setTextColor(Color.parseColor(tagColor));
+        GradientDrawable myGrad = (GradientDrawable)btnTag.getBackground();
+        myGrad.setStroke(convertDpToPx(2), Color.parseColor(tagColor));
+    }
+
+    private int convertDpToPx(int dp){
+        return (int) (dp * Resources.getSystem().getDisplayMetrics().density);
+    }
+
+    private void setCheckedButton(View tagSelectionView) {
+        RadioButton tag_radio_btn[] = new RadioButton[9];
+        int[] btn_id = {R.id.tag1,R.id.tag2,R.id.tag3,R.id.tag4,R.id.tag5,R.id.tag6,R.id.tag7,R.id.tag8,R.id.tag9};
+
+        for (int i = 0; i< btn_id.length; i++)
+        {
+            tag_radio_btn[i] = tagSelectionView.findViewById(btn_id[i]);
+        }
+
+        for(int i=0;i<tag_radio_btn.length;i++)
+        {
+            String btn_value = tag_radio_btn[i].getText().toString().toLowerCase();
+            String tag_value = btnTag.getText().toString().toLowerCase();
+
+            if (btn_value.equals(tag_value))
+            {
+                tag_radio_btn[i].setChecked(true);
+                break;
+            }
+        }
     }
 
     private void setValues() {
@@ -139,8 +222,10 @@ public class EditProfile extends AppCompatActivity {
                     txtEditName.setText(username);
                     btnTag.setText(tagname);
                     txtEditAbout.setText(about);
-                    Picasso.with(EditProfile.this).load(image).resize(160,160).into(imgUpload);
 
+                    Picasso.with(EditProfile.this).load(image).resize(160,160).into(imgUpload);
+                    tagColor = colorGetter.getColor(tagname);
+                    setTagColor();
                 }
             }
         });
@@ -303,6 +388,7 @@ public class EditProfile extends AppCompatActivity {
         mreference.child("users").child(userid).child("imageurl").setValue(imageUrl);
         mreference.child("users").child(userid).child("username").setValue(modifiedName);
         mreference.child("users").child(userid).child("About").setValue(modifiedAbout);
+        mreference.child("users").child(userid).child("tag").setValue(btnTag.getText().toString());
 
         startActivity(new Intent(EditProfile.this,MainActivity.class));
 
@@ -313,6 +399,7 @@ public class EditProfile extends AppCompatActivity {
     {
         mreference.child("users").child(userid).child("username").setValue(modifiedName);
         mreference.child("users").child(userid).child("About").setValue(modifiedAbout);
+        mreference.child("users").child(userid).child("tag").setValue(btnTag.getText().toString());
 
         Toast.makeText(EditProfile.this,"Profile Updated !!",Toast.LENGTH_LONG).show();
 

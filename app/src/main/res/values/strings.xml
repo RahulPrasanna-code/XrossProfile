@@ -12,6 +12,12 @@
     <string name="helper">HELPER</string>
     <string name="reformer">REFORMER</string>
     <string name="loyalist">LOYALIST</string>
+    <string name="peacemaker">PEACE MAKER</string>
+    <string name="challenger">CHALLENGER</string>
+    <string name="leader">LEADER</string>
+    <string name="enthusiast">ENTHUSIAST</string>
+    <string name="investigator">INVESTIGATOR</string>
+    <string name="individualist">INDIVIDUALIST</string>
     <string name="about">About</string>
     <string name="email">Email</string>
     <string name="skip">Skip</string>

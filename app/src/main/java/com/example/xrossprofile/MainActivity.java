@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -45,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtUsername,txtAbout,txtPopularity,txtConnections,txtTag;
     private String userid;
     private FirebaseAuth auth;
+    private ColorGetter colorGetter;
+    private String tagColor;
 
     private FirebaseUser loggedUser;
     private FirebaseDatabase mdb;
@@ -56,8 +59,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         auth = FirebaseAuth.getInstance();
-
-
+        
         imgProfile = findViewById(R.id.imgProfile);
         btnEdit = findViewById(R.id.btnEdit);
         txtUsername = findViewById(R.id.txtUsername);
@@ -66,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         txtConnections = findViewById(R.id.txtConnections);
         txtPopularity = findViewById(R.id.txtPopularity);
 
-
+        colorGetter = new ColorGetter();
         mdb = FirebaseDatabase.getInstance();
         mreference = mdb.getReference();
 
@@ -74,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
         userid = loggedUser.getUid();
 
         mreference.child("users").child(userid).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
-            @SuppressLint("ResourceAsColor")
             @Override
             public void onComplete(@NonNull Task<DataSnapshot> task) {
                 if (!task.isSuccessful()) {
@@ -90,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
 
                     txtUsername.setText(username);
                     txtTag.setText(tagname);
+                    tagColor = colorGetter.getColor(tagname);
+                    setColor();
                     txtConnections.setText(connections);
                     txtAbout.setText(about);
                     Picasso.with(MainActivity.this).load(image).resize(160,160).into(imgProfile);
@@ -107,4 +110,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void setColor() {
+        txtTag.setTextColor(Color.parseColor(tagColor));
+        GradientDrawable myGrad = (GradientDrawable)txtTag.getBackground();
+        myGrad.setStroke(convertDpToPx(2), Color.parseColor(tagColor));
+    }
+
+    private int convertDpToPx(int dp){
+        return (int) (dp * Resources.getSystem().getDisplayMetrics().density);
+    }
 }
